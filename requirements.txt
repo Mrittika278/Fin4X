@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+yfinance
+httpx
+python-dotenv
+reportlab
+matplotlib
+pypdf
+pytest
+pytest-asyncio

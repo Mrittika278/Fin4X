@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Fin4X | Multi-Asset Financial Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=3.4.6" />
+  <style id="live-indicator-styles">
+    /* Guaranteed immediate render for LIVE indicator (matching user reference) & Header News button */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 5px 14px;
+      border-radius: 12px;
+      background: #ffffff !important;
+      border: 1.5px solid #2d3748 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      user-select: none;
+      line-height: 1;
+    }
+
+    .live-dot-green,
+    .live-dot-red {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981 !important;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      animation: none !important;
+    }
+
+    .live-text-green,
+    .live-text-red {
+      color: #10b981 !important;
+      font-family: "Space Grotesk", "IBM Plex Sans", -apple-system, sans-serif;
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      animation: none !important;
+    }
+
+    .header-news-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border: 1.5px solid #06396b !important;
+      border-radius: 10px;
+      background: #084d91 !important;
+      color: #ffffff !important;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 6px rgba(8, 77, 145, 0.28);
+    }
+
+    .header-news-btn:hover {
+      background: #0a66c2 !important;
+      border-color: #0a66c2 !important;
+      color: #ffffff !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(10, 102, 194, 0.35);
+    }
+
+    .header-news-btn.active {
+      background: #053360 !important;
+      border-color: #053360 !important;
+      color: #ffffff !important;
+    }
+
+    .header-news-icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="metric_definitions.js?v=2.0.0"></script>
+  <script defer src="figure_captions.js?v=2.0.0"></script>
+  <script defer src="assessment_resources.js"></script>
+  <script defer src="assessment_questions.js"></script>
+  <script defer src="assessment_engine.js"></script>
+  <script defer src="app.js?v=3.5.6"></script>
+</head>
+
+<body>
+  <!-- QuantX / Fin4X Animated Logo Splash Screen -->
+  <div id="quantxSplashScreen" role="status" aria-live="polite">
+    <div class="splash-content">
+      <div class="splash-logo-mark" aria-hidden="true">↗</div>
+      <h1 class="splash-brand-title"><span>Fin</span><strong>4X</strong></h1>
+      <p class="splash-tagline">Finsights that are tailored just for you.</p>
+      <div class="splash-loader-bar-wrap">
+        <div class="splash-loader-bar-inner"></div>
+      </div>
+      <div id="splashStatusText" class="splash-status-text">Initializing QuantX...</div>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand" aria-label="Fin4X Financial Application">
+        <div class="brand-lockup"><span class="brand-mark">↗</span>
+          <div>
+            <div class="brand-wordmark"><span>Fin</span><strong>4X</strong></div><small>Financial Application</small>
+          </div>
+        </div>
+      </div>
+      <nav id="desktopNav" class="nav-list" aria-label="Dashboard sections"></nav>
+      <div class="system-card"><span class="live-dot"></span>
+        <div><strong id="sourceStatus">Connecting</strong><small>Signal pipeline online</small></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="mobile-nav" id="mobileNav"></div>
+      <header class="page-header">
+        <div>
+          <span class="eyebrow" id="sectionEyebrow">OVERVIEW</span>
+          <h1 id="pageTitle">Market Overview</h1>
+          <p class="page-subtitle" id="pageSubtitle">Monitor the latest available market prices, asset movements and
+            relevant market context for the assets supported by QuantX.</p>
+        </div>
+        <div class="header-actions">
+          <span id="lastUpdated" class="status">Loading...</span>
+          <div id="preloadStatusBadge" class="preload-status-badge" style="display:none;"
+            title="Background quantitative preloading active">
+            <span class="preload-spinner"></span>
+            <span id="preloadStatusText">Preparing analytics...</span>
+          </div>
+          <div class="live-status-pill" title="Live quantitative signal stream active">
+            <span class="live-dot-green"></span>
+            <span class="live-text-green">LIVE</span>
+          </div>
+          <button id="headerNewsBtn" class="header-news-btn" type="button" aria-expanded="false"
+            title="Toggle Market News sidebar">
+            <span class="header-news-icon">📰</span>
+            <span>Market News</span>
+          </button>
+        </div>
+      </header>
+
+
+      <section class="view active" data-view="overview">
+        <div id="overviewCards" class="metric-grid three"></div>
+        <div class="panel chart-panel performance-panel">
+          <div class="panel-heading">
+            <div><span class="eyebrow">Performance snapshot</span>
+              <h2>Multi-asset market tape</h2>
+            </div><select id="overviewPeriod">
+              <option value="1y">1 year</option>
+              <option value="2y" selected>2 years</option>
+              <option value="5y">5 years</option>
+            </select>
+          </div>
+          <div class="legend"><span><i class="gold"></i>Gold</span><span><i class="bitcoin"></i>Bitcoin</span><span><i
+                class="nvidia"></i>NVIDIA</span></div>
+          <div class="chart-wrap large"><canvas id="performanceChart"></canvas></div>
+          <div id="performanceCaption"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="explorer">
+        <div class="toolbar">
+          <div><span class="eyebrow">Asset Explorer</span>
+            <h2>Technical intelligence</h2>
+          </div>
+          <div class="toolbar-actions"><select id="assetSelect">
+              <option value="gold">Gold</option>
+              <option value="bitcoin">Bitcoin</option>
+              <option value="nvidia">NVIDIA</option>
+            </select><select id="assetPeriod">
+              <option value="1y">1 year</option>
+              <option value="2y" selected>2 years</option>
+              <option value="5y">5 years</option>
+            </select></div>
+        </div>
+        <div id="assetMetrics" class="metric-grid six"></div>
+        <div class="two-column">
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <h2>Price and trend structure</h2>
+            </div>
+            <div class="chart-wrap"><canvas id="assetChart"></canvas></div>
+            <div id="assetCaption"></div>
+          </div>
+          <div class="panel signal-panel">
+            <h2>Signal stack</h2>
+            <div id="signals"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="correlation">
+        <div class="correlation-grid">
+          <div class="panel heatmap-panel">
+            <div class="panel-heading">
+              <h2>Correlation Matrix</h2><span id="correlationSource" class="status"></span>
+            </div>
+            <div id="correlationMatrix" class="plotly-chart"></div>
+            <div id="correlationMatrixCaption"></div>
+          </div>
+          <div class="panel rolling-correlation-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Rolling Correlation</h2><span class="metric-sub">60-trading-day relationship</span>
+              </div>
+            </div>
+            <div id="rollingCorrelationChart" class="plotly-chart"></div>
+            <div id="rollingCorrelationCaption"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="strategy">
+        <div class="strategy-subtabs" role="tablist" aria-label="Strategy Lab Modes">
+          <button type="button" class="strategy-subtab active" data-strategy-tab="backtest">◈ Strategy Backtest
+            Engine</button>
+          <button type="button" class="strategy-subtab" data-strategy-tab="stress">◇ Manual Stress Simulation</button>
+        </div>
+
+        <!-- Tab 1: Strategy Backtest Engine -->
+        <div class="strategy-tab-panel active" id="strategyBacktestPanel">
+          <div class="strategy-workspace">
+            <div class="panel form-panel strategy-controls">
+              <h2>Backtest Parameters</h2>
+              <label>Target Asset Universe<select id="strategyAsset">
+                  <option value="bitcoin">Bitcoin</option>
+                  <option value="nvidia">NVIDIA</option>
+                  <option value="gold">Gold</option>
+                </select></label>
+              <label>Quantitative Strategy Model<select id="strategySelect">
+                  <option value="ema">EMA Trend</option>
+                  <option value="sma">SMA Crossover</option>
+                  <option value="momentum">Momentum</option>
+                  <option value="mean_reversion">Mean Reversion</option>
+                </select></label>
+              <h3>Model Hyperparameters</h3>
+              <label>Fast / Short Window (Days)<output id="fastOutput">20</output><input id="fastWindow" type="range"
+                  min="5" max="50" value="20" /></label>
+              <label>Slow / Long Window (Days)<output id="slowOutput">100</output><input id="slowWindow" type="range"
+                  min="30" max="200" value="100" /></label>
+              <h3>Execution Constraints</h3>
+              <label>Initial Capital (INR)<input id="capital" type="number" value="140000" min="1000"
+                  step="1000" /></label>
+              <label>Transaction Friction Cost (%)<output id="costOutput">0.10%</output><input id="cost" type="range"
+                  min="0" max="0.5" step="0.01" value="0.1" /></label>
+              <button id="strategyRun">↗ Run Backtest Simulation</button>
+            </div>
+            <div class="strategy-results">
+              <div class="panel chart-panel">
+                <div class="panel-heading">
+                  <h2>Performance Equity Curve</h2><span id="strategySource" class="status"></span>
+                </div>
+                <div class="chart-wrap strategy-chart-wrap"><canvas id="strategyChart"></canvas></div>
+                <div id="strategyCaption"></div>
+              </div>
+              <div id="strategyMetrics" class="metric-grid four strategy-metrics"></div>
+              <div class="panel table-panel trade-panel">
+                <div class="panel-heading">
+                  <h2>Trade Execution Log</h2><span class="status">Most recent executions</span>
+                </div>
+                <div id="tradeLog"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Manual Stress Simulation (Hypothetical Experimentation) -->
+        <div class="strategy-tab-panel" id="strategyStressPanel" style="display:none;">
+          <div class="stress-workspace">
+            <div class="panel form-panel strategy-stress-controls">
+              <h2>Hypothetical Stress Parameters</h2>
+              <label>Target Asset Universe
+                <select id="strategyStressAsset">
+                  <option value="bitcoin">Bitcoin</option>
+                  <option value="nvidia">NVIDIA</option>
+                  <option value="gold">Gold</option>
+                </select>
+              </label>
+              <label>Market Scenario
+                <select id="strategyStressScenario">
+                  <option value="market_crash">Market Crash</option>
+                  <option value="volatility_spike">Volatility Spike</option>
+                  <option value="liquidity_shock">Liquidity Shock</option>
+                  <option value="recovery">Shock and Recovery</option>
+                </select>
+              </label>
+              <label>Shock magnitude
+                <output id="strategyStressShockOutput">20%</output>
+                <input id="strategyStressShock" type="range" min="1" max="80" value="20" />
+              </label>
+              <button id="strategyStressRun" type="button">Run Stress Test</button>
+              <button id="strategyRunCombined" class="strategy-combined-btn" type="button"
+                title="Execute both strategy backtest and manual stress simulation">⚡ Run Combined Backtest &
+                Stress</button>
+            </div>
+            <div class="stress-results">
+              <div id="strategyStressMetrics" class="metric-grid four"></div>
+              <div class="panel chart-panel">
+                <div class="panel-heading">
+                  <h2>Hypothetical Stressed Equity Curve</h2><span id="strategyStressSource" class="status"></span>
+                </div>
+                <div class="chart-wrap stress-chart-wrap"><canvas id="strategyStressChart"></canvas></div>
+                <div id="strategyStressCaption"></div>
+              </div>
+              <div class="panel stress-notes">
+                <h2>Scenario interpretation</h2>
+                <div id="strategyStressSummary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="regimes">
+        <div class="toolbar">
+          <div><span class="eyebrow">Market Regimes</span>
+            <h2>Macro climate decomposition</h2>
+          </div>
+          <div class="toolbar-actions"><select id="regimeAsset">
+              <option value="gold">Gold</option>
+              <option value="bitcoin">Bitcoin</option>
+              <option value="nvidia">NVIDIA</option>
+            </select><span id="regimeSource" class="status"></span></div>
+        </div>
+        <p class="view-description">Classify the selected asset by trend direction and volatility state using live price
+          history.</p>
+        <div class="regime-hero panel">
+          <div><span class="eyebrow">Current market state</span>
+            <div id="currentRegime" class="current-regime">Loading regime...</div>
+            <div id="currentRegimeMeta" class="metric-sub">Trend and volatility classification</div>
+          </div>
+          <div id="currentRegimeDot" class="current-regime-dot"></div>
+        </div>
+        <div class="regime-comparison-controls panel">
+          <div><span class="eyebrow">Strategy comparison</span>
+            <h2>Comparative performance under selected macro regime</h2>
+          </div><select id="regimeScenario">
+            <option value="bull">Bull Market (Expansion)</option>
+            <option value="bear">Bear Market (Contraction)</option>
+            <option value="high_vol">High Volatility Shock</option>
+            <option value="low_vol">Low Volatility Grind</option>
+          </select>
+        </div>
+        <div id="regimeStrategyTable" class="panel regime-strategy-panel"></div>
+        <div id="regimeCards" class="metric-grid four regime-cards"></div>
+        <div class="regime-layout">
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <h2>Regime timeline</h2><span class="status">Historical state transitions</span>
+            </div>
+            <div id="regimeTimeline" class="plotly-chart regime-timeline"></div>
+            <div id="regimeTimelineCaption"></div>
+          </div>
+          <div class="panel regime-table-panel">
+            <div class="panel-heading">
+              <h2>Regime breakdown</h2><span class="status">Days / return / volatility</span>
+            </div>
+            <div id="regimeTable"></div>
+          </div>
+        </div>
+        <div class="panel chart-panel regime-return-panel">
+          <div class="panel-heading">
+            <h2>Regime return profile</h2><span class="status">Return by market climate</span>
+          </div>
+          <div class="chart-wrap"><canvas id="regimeChart"></canvas></div>
+          <div id="regimeChartCaption"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="adaptive"><span class="eyebrow">Adaptive Lab</span>
+        <h2>Regime-aware allocation</h2>
+        <div id="adaptiveCards" class="metric-grid three"></div>
+        <div class="panel chart-panel">
+          <h2>Dynamic allocation weights</h2>
+          <div class="chart-wrap"><canvas id="adaptiveChart"></canvas></div>
+          <div id="adaptiveChartCaption"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="stress">
+        <div class="toolbar">
+          <div>
+            <span class="eyebrow">Stress Lab</span>
+            <h2>Automated Market-Stress Intelligence</h2>
+          </div>
+          <div class="toolbar-actions">
+            <select id="stressAsset">
+              <option value="bitcoin">Bitcoin</option>
+              <option value="gold">Gold</option>
+              <option value="nvidia">NVIDIA</option>
+            </select>
+            <span id="stressSource" class="status"></span>
+          </div>
+        </div>
+        <p class="view-description">Continuous quantitative risk intelligence automatically decomposes live volatility,
+          drawdown, and tail risk to recommend optimal shock scenarios with supporting market news.</p>
+
+        <!-- Automated Detection Hero Badge -->
+        <div class="stress-auto-hero panel">
+          <div class="stress-auto-hero-main">
+            <div class="stress-auto-badge-wrap">
+              <span class="eyebrow">Detected Market Condition</span>
+              <div id="stressDetectedScenario" class="stress-detected-title">Analyzing market condition...</div>
+            </div>
+            <div class="stress-auto-rec-wrap">
+              <span class="eyebrow">Recommended Shock Magnitude</span>
+              <div id="stressRecommendedShock" class="stress-rec-value">--</div>
+            </div>
+          </div>
+          <div id="stressFreshnessTag" class="stress-freshness-tag">Live detection active</div>
+        </div>
+
+        <!-- Observed Market Metrics Grid -->
+        <div id="stressObservedMetrics" class="metric-grid four stress-observed-grid"></div>
+
+        <!-- Classification Reasoning & Real-Time News Evidence -->
+        <div class="two-column stress-intelligence-columns">
+          <div class="panel text-panel stress-reasoning-panel">
+            <div class="panel-heading">
+              <h2>Quantitative Detection Rationale</h2>
+              <span class="status">Statistical Engine</span>
+            </div>
+            <div id="stressReasoningText" class="stress-reasoning-text">Loading market intelligence...</div>
+          </div>
+          <div class="panel stress-evidence-panel">
+            <div class="panel-heading">
+              <h2>Supporting Market Evidence</h2>
+              <span class="status">Google News via SerpApi</span>
+            </div>
+            <div id="stressNewsEvidence" class="stress-news-evidence-list"></div>
+          </div>
+        </div>
+
+        <!-- Automated Stress Simulation Results -->
+        <div class="panel chart-panel stress-chart-panel">
+          <div class="panel-heading">
+            <h2>Automated Stress Impact Projection (Baseline vs Stressed)</h2>
+            <span id="stressSimulationMeta" class="status"></span>
+          </div>
+          <div class="chart-wrap stress-chart-wrap"><canvas id="stressChart"></canvas></div>
+          <div id="stressChartCaption"></div>
+        </div>
+        <div id="stressMetrics" class="metric-grid four stress-impact-metrics"></div>
+      </section>
+
+      <section class="view" data-view="advanced">
+        <div class="toolbar">
+          <div><span class="eyebrow">Advanced Lab</span>
+            <h2>Advanced Quantitative Analytics</h2>
+          </div><span id="advancedSource" class="status"></span>
+        </div>
+        <div class="advanced-tabs"><button class="advanced-tab active" data-advanced-view="montecarlo">◈ Monte Carlo
+            Future Simulation</button><button class="advanced-tab" data-advanced-view="optimizer">▥ Portfolio Weight
+            Optimizer</button><button class="advanced-tab" data-advanced-view="risk">⚠ Value at Risk (VaR) & Tail
+            Risk</button></div>
+        <div class="advanced-panel active" data-advanced-panel="montecarlo">
+          <p class="view-description">Generate probabilistic future price paths from the selected asset's real
+            historical return distribution.</p>
+          <div class="advanced-workspace">
+            <div class="panel form-panel advanced-controls">
+              <h2>Simulation Parameters</h2><label>Target Asset<select id="advancedAsset">
+                  <option value="bitcoin">Bitcoin</option>
+                  <option value="nvidia">NVIDIA</option>
+                  <option value="gold">Gold</option>
+                </select></label><label>Forecast horizon<output id="horizonOutput">90 trading days</output><input
+                  id="horizonSize" type="range" min="30" max="365" value="90" /></label><label>Simulation paths<output
+                  id="pathsOutput">120 paths</output><input id="pathsSize" type="range" min="40" max="300" step="20"
+                  value="120" /></label><button id="advancedRun">Run Monte Carlo Forecast</button>
+              <div id="advancedSummary" class="advanced-summary"></div>
+            </div>
+            <div class="advanced-results">
+              <div class="panel chart-panel">
+                <div class="panel-heading">
+                  <h2 id="advancedChartTitle">Monte Carlo Forecast</h2><span class="status">Faint paths =
+                    simulations</span>
+                </div>
+                <div class="chart-wrap advanced-chart-wrap">
+                  <div id="advancedChart" class="plotly-chart"></div>
+                </div>
+                <div id="advancedChartCaption"></div>
+              </div>
+              <div id="advancedMetrics" class="metric-grid three"></div>
+            </div>
+          </div>
+        </div>
+        <div class="advanced-panel" data-advanced-panel="optimizer">
+          <p class="view-description">Optimize capital allocation across Gold, Bitcoin, and NVIDIA to maximize the
+            historical Sharpe ratio.</p>
+          <div class="advanced-workspace">
+            <div class="panel form-panel advanced-controls">
+              <h2>Allocation Constraints</h2><label>Assumed risk-free rate<output
+                  id="riskFreeOutput">5.00%</output><input id="riskFreeSize" type="range" min="0" max="10" step="0.25"
+                  value="5" /></label><label>Optimization iterations<input id="optimizerIterations" type="number"
+                  value="2000" min="100" max="10000" step="100" /></label><button id="optimizerRun">⚡ Optimize Portfolio
+                Weights</button>
+            </div>
+            <div class="advanced-results">
+              <div class="panel chart-panel">
+                <h2>Optimal Portfolio Allocation (Max Sharpe)</h2>
+                <div id="optimizerTable"></div>
+                <div class="chart-wrap optimizer-chart-wrap">
+                  <div id="optimizerChart" class="plotly-chart"></div>
+                </div>
+                <div id="optimizerChartCaption"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="advanced-panel" data-advanced-panel="risk">
+          <p class="view-description">Measure maximum expected portfolio loss over a one-day holding period at 95% and
+            99% confidence intervals.</p>
+          <div class="risk-metrics" id="riskMetrics"></div>
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <h2>Portfolio Daily Return Distribution with VaR Cutoffs</h2><span id="riskSource" class="status"></span>
+            </div>
+            <div class="chart-wrap risk-chart-wrap">
+              <div id="riskChart" class="plotly-chart"></div>
+            </div>
+            <div id="riskChartCaption"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="ml-regimes">
+        <div class="toolbar">
+          <div><span class="eyebrow">ML Market Regimes</span>
+            <h2>Unsupervised market state detection</h2>
+          </div>
+          <div class="toolbar-actions"><select id="mlRegimeAsset">
+              <option value="gold">Gold</option>
+              <option value="bitcoin" selected>Bitcoin</option>
+              <option value="nvidia">NVIDIA</option>
+            </select><span id="mlRegimeSource" class="status"></span></div>
+        </div>
+        <p class="view-description">Cluster live return, volatility, and momentum features into defensive, balanced, and
+          risk-on states.</p>
+        <div id="mlRegimeMetrics" class="metric-grid three"></div>
+        <div class="two-column">
+          <div class="panel chart-panel">
+            <div class="panel-heading">
+              <h2>Detected regime timeline</h2><span id="mlRegimeModel" class="status"></span>
+            </div>
+            <div id="mlRegimeChart" class="plotly-chart"></div>
+            <div id="mlRegimeChartCaption"></div>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-heading">
+              <h2>Cluster profiles</h2><span class="status">Rolling feature averages</span>
+            </div>
+            <div id="mlRegimeTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="paper-trading">
+        <div class="toolbar">
+          <div><span class="eyebrow">Paper Trading Simulator</span>
+            <h2>Live mark-to-market execution</h2>
+          </div><span id="paperSource" class="status"></span>
+        </div>
+        <p class="view-description">Place simulated orders against current market prices. No broker credentials or real
+          capital are used.</p>
+        <div id="paperMetrics" class="metric-grid three"></div>
+        <div class="paper-workspace">
+          <div class="panel form-panel paper-controls">
+            <h2>Order ticket</h2><label>Asset<select id="paperAsset">
+                <option value="gold">Gold</option>
+                <option value="bitcoin">Bitcoin</option>
+                <option value="nvidia">NVIDIA</option>
+              </select></label><label>Side<select id="paperSide">
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select></label><label>Quantity<input id="paperQuantity" type="number" value="1" min="0.0001"
+                step="0.0001" /></label><button id="paperOrder">Place Paper Order</button>
+            <div id="paperMessage" class="advanced-summary"></div>
+          </div>
+          <div class="paper-results">
+            <div class="panel table-panel">
+              <div class="panel-heading">
+                <h2>Open positions</h2><button id="paperRefresh" class="compact-button">Refresh</button>
+              </div>
+              <div id="paperPositions"></div>
+            </div>
+            <div class="panel table-panel">
+              <div class="panel-heading">
+                <h2>Execution history</h2><span class="status">Latest 25 fills</span>
+              </div>
+              <div id="paperTrades"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="news">
+        <div class="toolbar">
+          <div><span class="eyebrow">Financial Intelligence</span>
+            <h2>Market News & Global Macro Feed</h2>
+          </div>
+          <div class="toolbar-actions">
+            <div class="news-fs-filters" role="tablist" aria-label="Fullscreen asset news filters">
+              <button type="button" class="news-fs-pill active" data-fs-asset="all">All Markets</button>
+              <button type="button" class="news-fs-pill" data-fs-asset="gold">Gold</button>
+              <button type="button" class="news-fs-pill" data-fs-asset="bitcoin">Bitcoin</button>
+              <button type="button" class="news-fs-pill" data-fs-asset="nvidia">NVIDIA</button>
+            </div>
+            <span id="newsFsStatus" class="status"></span>
+          </div>
+        </div>
+        <div id="newsFsStaleBanner" class="news-stale-banner" style="display:none;" role="alert"></div>
+        <div id="newsFsContainer" class="news-fullscreen-grid" role="feed" aria-busy="false"></div>
+      </section>
+
+      <!-- Knowledge Assessment View -->
+      <section class="view" data-view="assessment">
+
+
+        <!-- Mandatory Disclaimer Banner (Visible across stages) -->
+        <aside class="assessment-disclaimer-panel" role="note" aria-label="Assessment Disclaimer">
+          <div class="disclaimer-title-row">
+            <span class="disclaimer-icon">⚠️</span>
+            <strong>Important Note</strong>
+          </div>
+          <p class="disclaimer-text">
+            "This assessment is designed to give you an opportunity to evaluate your current knowledge level in finance
+            and financial markets. Your score reflects your performance on this assessment only and does not mean that
+            you are ready to invest real money. It does not assess your complete financial situation, personal risk
+            tolerance or suitability for any investment."
+          </p>
+        </aside>
+
+        <!-- Stage 1: Intro / Path Selection -->
+        <div id="assessmentIntroState" class="assessment-stage-container">
+          <div class="assessment-intro-card">
+            <h3>Evaluate your financial and quantitative proficiency</h3>
+            <p class="assessment-intro-desc">
+              QuantX Adaptive Assessment provides a personalized diagnostic of your conceptual, numerical, and market
+              understanding. Questions dynamically adapt in difficulty as you answer, providing an honest topic-by-topic
+              evaluation without tests being saved or shared.
+            </p>
+
+            <div class="assessment-paths-grid">
+              <!-- Path A -->
+              <div class="assessment-path-box" data-path="foundations">
+                <div class="path-badge">Path A</div>
+                <h4>Investor Foundations</h4>
+                <p class="path-desc">For investors who are new to financial markets or want to evaluate foundational
+                  principles of equities, risk, compounding, orders, and market psychology.</p>
+                <ul class="path-topics-list">
+                  <li>• Stock market fundamentals & indices</li>
+                  <li>• Market orders, liquidity & bid-ask spreads</li>
+                  <li>• Returns, compounding & drawdown mechanics</li>
+                  <li>• Diversification, correlations & behavioral biases</li>
+                </ul>
+                <div class="path-meta-row">
+                  <span>⏱ ~10–15 mins</span>
+                  <span>📊 10 Core Topics</span>
+                </div>
+                <button type="button" class="assessment-btn-start" onclick="startAssessment('foundations')">Start
+                  Foundations Assessment →</button>
+              </div>
+
+              <!-- Path B -->
+              <div class="assessment-path-box" data-path="quant">
+                <div class="path-badge quant-badge">Path B</div>
+                <h4>Quantitative Finance</h4>
+                <p class="path-desc">For practitioners and researchers wanting to test their understanding of market
+                  data, statistical indicators, backtesting integrity, regime modeling, and risk testing.</p>
+                <ul class="path-topics-list">
+                  <li>• OHLCV time series & log returns</li>
+                  <li>• Probability, volatility scaling & indicators</li>
+                  <li>• Signal generation, look-ahead bias & overfitting</li>
+                  <li>• Market regimes, Monte Carlo & stress testing</li>
+                </ul>
+                <div class="path-meta-row">
+                  <span>⏱ ~12–18 mins</span>
+                  <span>⚡ 12 Quantitative Topics</span>
+                </div>
+                <button type="button" class="assessment-btn-start" onclick="startAssessment('quant')">Start Quantitative
+                  Assessment →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 2: Active Question Flow -->
+        <div id="assessmentActiveState" class="assessment-stage-container" style="display:none;">
+          <div id="assessmentHeaderBadges" class="assessment-header-badges" style="display:none; margin-bottom: 14px;">
+            <span id="assessmentPathBadge" class="assessment-badge-pill"></span>
+            <span id="assessmentDifficultyBadge" class="assessment-badge-diff"></span>
+          </div>
+          <div class="assessment-progress-bar-wrap">
+            <div id="assessmentProgressFill" class="assessment-progress-fill" style="width: 0%;"></div>
+          </div>
+          <div class="assessment-question-card">
+            <div class="question-header-meta">
+              <span id="questionTopicTag" class="question-topic-tag">Topic</span>
+              <span id="questionCounter" class="question-counter">Question 1 of ~18</span>
+            </div>
+            <h3 id="questionText" class="question-main-text"></h3>
+            <form id="assessmentOptionsForm" class="assessment-options-list" onsubmit="event.preventDefault();"></form>
+            <div class="question-footer-actions">
+              <button id="assessmentSubmitBtn" type="button" class="assessment-btn-next" onclick="submitCurrentAnswer()"
+                disabled>Next Question ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 3: Results, Diagnostics & Curated Resources -->
+        <div id="assessmentResultState" class="assessment-stage-container" style="display:none;">
+          <!-- Overall Score Hero -->
+          <div class="assessment-result-hero">
+            <div>
+              <span class="eyebrow" id="resultPathName">Knowledge Profile</span>
+              <h2 id="resultOverallTitle">Assessment Complete</h2>
+              <p id="resultInterpretationText" class="result-interpretation-text"></p>
+            </div>
+            <div class="result-score-circle">
+              <span id="resultOverallPercentage" class="result-score-number">--%</span>
+              <span id="resultScoreSub" class="result-score-sub">Overall Score</span>
+            </div>
+          </div>
+
+          <!-- Strengths and Knowledge Gaps Grid -->
+          <div class="two-column" style="margin-bottom: 22px;">
+            <div class="panel text-panel">
+              <h3 style="color:#16734d;margin-top:0;">🎯 Demonstrated Strengths</h3>
+              <div id="resultStrengthsList" class="result-diagnostic-list"></div>
+            </div>
+            <div class="panel text-panel">
+              <h3 style="color:#b44837;margin-top:0;">📚 Key Knowledge Gaps to Strengthen</h3>
+              <div id="resultGapsList" class="result-diagnostic-list"></div>
+            </div>
+          </div>
+
+          <!-- Topic-Wise Proficiency Breakdown -->
+          <div class="panel" style="margin-bottom: 22px;">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Diagnostic Breakdown</span>
+                <h2>Topic-Wise Assessed Proficiency</h2>
+              </div>
+            </div>
+            <div id="resultTopicBars" class="result-topic-bars-list"></div>
+          </div>
+
+          <!-- Recommended External Learning Resources -->
+          <div class="panel" style="margin-bottom: 22px;">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Curated External Recommendations</span>
+                <h2>Verified External Learning Resources</h2>
+              </div>
+            </div>
+            <p class="resource-disclaimer-note">
+              QuantX does not host learning material or sponsor these institutions. These verified resources are
+              selected specifically based on your diagnostic results to help strengthen your identified knowledge gaps.
+            </p>
+            <div id="resultRecommendationsList" class="result-resources-grid"></div>
+          </div>
+
+          <!-- Comprehensive Question-by-Question Review -->
+          <div class="panel" style="margin-bottom: 22px;">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Answer Key & Working</span>
+                <h2>Question Explanations & Review</h2>
+              </div>
+            </div>
+            <div id="resultAnswerReviewList" class="result-review-list"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="assessment-actions-row">
+            <button type="button" class="assessment-btn-retake" onclick="resetAssessment()">↻ Retake Another
+              Assessment</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="summary">
+        <div id="reportErrorBanner" class="finding report-error-banner" style="display:none;" role="alert"></div>
+        <div class="two-column">
+          <div class="panel text-panel">
+            <h2>Key findings</h2>
+            <div id="findings"></div>
+          </div>
+          <div class="panel text-panel">
+            <h2>Risk and regime view</h2>
+            <div id="riskView"></div>
+          </div>
+        </div>
+        <div class="summary-actions-bottom">
+          <button id="downloadReportBtn" class="download-report-btn" type="button"
+            title="Download comprehensive two-page quantitative research report (PDF)">
+            <span class="download-btn-icon">📥</span>
+            <span id="downloadReportText" class="download-btn-text">Download Report</span>
+          </button>
+        </div>
+      </section>
+      <aside class="quant-assistant" aria-label="Fin4X Quantitative Research Assistant">
+        <button id="assistantLauncher" class="assistant-launcher" type="button" aria-expanded="false"><span
+            class="assistant-spark">✦</span><span>Ask Fin4X AI</span></button>
+        <section id="assistantPanel" class="assistant-panel" aria-hidden="true">
+          <div class="assistant-header">
+            <div><span class="eyebrow">Fin4X Intelligence</span>
+              <h2>Quant Research Assistant</h2>
+            </div><button id="assistantClose" class="assistant-close" type="button"
+              aria-label="Close assistant">×</button>
+          </div>
+          <div id="assistantMessages" class="assistant-messages">
+            <div class="assistant-message assistant-bot">I can help interpret the dashboard, compare assets, or suggest
+              the next research step.</div>
+          </div>
+          <div class="assistant-prompts"><button type="button"
+              data-assistant-prompt="Summarize the current dashboard">Summarize dashboard</button><button type="button"
+              data-assistant-prompt="What should I investigate next?">Next research step</button><button type="button"
+              data-assistant-prompt="Explain backtesting risk">Explain backtest risk</button></div>
+          <form id="assistantForm" class="assistant-form"><input id="assistantInput" type="text"
+              placeholder="Ask a research question..." autocomplete="off" /><button type="submit"
+              aria-label="Send question">↗</button></form>
+        </section>
+      </aside>
+    </main>
+
+    <!-- Market News Sidebar -->
+    <aside class="news-sidebar" id="newsSidebar" aria-label="Market News">
+      <div class="news-header">
+        <div class="news-header-top">
+          <div class="news-title-wrap">
+            <span class="news-eyebrow">Google News Feed</span>
+            <h2 class="news-title">Market News</h2>
+          </div>
+          <div class="news-header-btns">
+            <button id="newsRefreshBtn" class="news-icon-btn" type="button" title="Refresh market news"
+              aria-label="Refresh news">
+              <span class="refresh-glyph">↻</span>
+            </button>
+            <button id="newsCloseBtn" class="news-icon-btn news-close-btn" type="button" title="Collapse news sidebar"
+              aria-label="Collapse news sidebar">
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="news-header-meta">
+          <span class="news-source-tag">Powered by Google News</span>
+          <span id="newsLastUpdated" class="news-time-tag">Initializing...</span>
+        </div>
+        <div class="news-mode-note">
+          <span class="news-mode-dot"></span>
+          <span>Auto-refreshed (5m) &bull; Quantitative Feed</span>
+        </div>
+        <div class="news-filter-bar" role="tablist" aria-label="Asset news filters">
+          <button type="button" class="news-pill active" data-news-asset="all">All Markets</button>
+          <button type="button" class="news-pill" data-news-asset="gold">Gold</button>
+          <button type="button" class="news-pill" data-news-asset="bitcoin">Bitcoin</button>
+          <button type="button" class="news-pill" data-news-asset="nvidia">NVIDIA</button>
+        </div>
+      </div>
+
+      <div id="newsStaleBanner" class="news-stale-banner" style="display:none;" role="alert"></div>
+
+      <div id="newsList" class="news-feed" role="feed" aria-busy="false" aria-live="polite"></div>
+    </aside>
+
+    <div id="newsOverlay" class="news-overlay" aria-hidden="true"></div>
+  </div>
+</body>
+
+</html>
